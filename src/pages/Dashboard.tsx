@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, UserPlus, FileText, AlertTriangle, TrendingUp, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const stats = [
   {
@@ -66,6 +67,8 @@ const recentEnrollments = [
 ];
 
 export const Dashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="p-6 space-y-6">
       {/* Welcome Section */}
@@ -76,7 +79,10 @@ export const Dashboard = () => {
             Here's your enrollment dashboard overview for today
           </p>
         </div>
-        <Button className="bg-gradient-primary">
+        <Button 
+          className="bg-gradient-primary"
+          onClick={() => navigate("/enroll")}
+        >
           <UserPlus className="h-4 w-4 mr-2" />
           New Enrollment
         </Button>
@@ -143,7 +149,11 @@ export const Dashboard = () => {
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-4">
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => navigate("/records")}
+            >
               View All Records
             </Button>
           </CardContent>
@@ -180,7 +190,11 @@ export const Dashboard = () => {
                 <Badge className="bg-success text-success-foreground">Active</Badge>
               </div>
             </div>
-            <Button variant="outline" className="w-full mt-4">
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => navigate("/logs")}
+            >
               View System Logs
             </Button>
           </CardContent>

@@ -13,6 +13,7 @@ import {
   Calendar
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 const mockRecords = [
   {
@@ -68,6 +69,7 @@ const mockRecords = [
 ];
 
 export const Records = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [records] = useState(mockRecords);
@@ -265,13 +267,25 @@ export const Records = () => {
                     </td>
                     <td className="p-4">
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate(`/records/${record.id}`)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate(`/enroll/${record.id}`)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate(`/print?id=${record.id}`)}
+                        >
                           <Download className="h-4 w-4" />
                         </Button>
                       </div>
