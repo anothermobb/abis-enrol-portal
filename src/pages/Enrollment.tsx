@@ -396,7 +396,15 @@ export const Enrollment = () => {
                 <Button variant="outline">
                   Save as Draft
                 </Button>
-                <Button className="bg-gradient-primary">
+                <Button 
+                  className="bg-gradient-primary"
+                  onClick={() => {
+                    // Submit enrollment data
+                    console.log('Submitting enrollment:', { enrollmentData, capturedBiometrics });
+                    // Navigate to records after successful submission
+                    navigate('/records');
+                  }}
+                >
                   <Save className="w-4 h-4 mr-2" />
                   Submit Enrollment
                 </Button>
