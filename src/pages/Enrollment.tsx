@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,18 @@ type Step = "demographics" | "biometrics" | "review";
 type BiometricType = "fingerprint" | "photo" | "iris";
 
 export const Enrollment = () => {
-  const [currentStep, setCurrentStep] = useState<Step>("demographics");
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get current step from URL or default to demographics
+  const getStepFromPath = (): Step => {
+    const path = location.pathname;
+    if (path.includes('/biometrics')) return 'biometrics';
+    if (path.includes('/review')) return 'review';
+    return 'demographics';
+  };
+
+  const [currentStep, setCurrentStep] = useState<Step>(getStepFromPath());
   const [capturedBiometrics, setCapturedBiometrics] = useState<BiometricType[]>([]);
   const [enrollmentData, setEnrollmentData] = useState({
     firstName: "",
@@ -34,6 +46,20 @@ export const Enrollment = () => {
     email: "",
     idNumber: ""
   });
+
+  // Update URL when step changes
+  const handleStepChange = (step: Step) => {
+    setCurrentStep(step);
+    navigate(`/enroll/${step}`);
+  };
+
+  // Sync URL changes with step state
+  useEffect(() => {
+    const newStep = getStepFromPath();
+    if (newStep !== currentStep) {
+      setCurrentStep(newStep);
+    }
+  }, [location.pathname]);
 
   const steps = [
     { id: "demographics", label: "Demographics", icon: User },
@@ -170,7 +196,7 @@ export const Enrollment = () => {
 
             <div className="flex justify-end">
               <Button 
-                onClick={() => setCurrentStep("biometrics")}
+                onClick={() => handleStepChange("biometrics")}
                 className="bg-gradient-primary"
                 disabled={!enrollmentData.firstName || !enrollmentData.lastName || !enrollmentData.dateOfBirth}
               >
@@ -309,12 +335,12 @@ export const Enrollment = () => {
 
           {/* Navigation */}
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setCurrentStep("demographics")}>
+            <Button variant="outline" onClick={() => handleStepChange("demographics")}>
               <RotateCcw className="w-4 h-4 mr-2" />
               Back
             </Button>
             <Button 
-              onClick={() => setCurrentStep("review")}
+              onClick={() => handleStepChange("review")}
               className="bg-gradient-primary"
               disabled={!isBiometricsComplete}
             >
@@ -362,7 +388,7 @@ export const Enrollment = () => {
 
             {/* Actions */}
             <div className="flex justify-between pt-6 border-t border-border">
-              <Button variant="outline" onClick={() => setCurrentStep("biometrics")}>
+              <Button variant="outline" onClick={() => handleStepChange("biometrics")}>
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Back
               </Button>
