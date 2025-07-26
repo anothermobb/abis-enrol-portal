@@ -44,7 +44,9 @@ export const Enrollment = () => {
     address: "",
     phoneNumber: "",
     email: "",
-    idNumber: ""
+    sid: "",
+    nationalId: "",
+    rank: ""
   });
 
   // Update URL when step changes
@@ -62,8 +64,8 @@ export const Enrollment = () => {
   }, [location.pathname]);
 
   const steps = [
-    { id: "demographics", label: "Demographics", icon: User },
-    { id: "biometrics", label: "Biometrics", icon: Fingerprint },
+    { id: "demographics", label: "Bio Data", icon: User },
+    { id: "biometrics", label: "Biometric Data", icon: Fingerprint },
     { id: "review", label: "Review", icon: Check }
   ];
 
@@ -118,7 +120,7 @@ export const Enrollment = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5" />
-              Demographic Information
+              Bio Data Capture
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -164,13 +166,45 @@ export const Enrollment = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="idNumber">ID Number</Label>
+                <Label htmlFor="sid">SID *</Label>
                 <Input 
-                  id="idNumber"
-                  value={enrollmentData.idNumber}
-                  onChange={(e) => setEnrollmentData({...enrollmentData, idNumber: e.target.value})}
-                  placeholder="Enter ID number"
+                  id="sid"
+                  value={enrollmentData.sid}
+                  onChange={(e) => setEnrollmentData({...enrollmentData, sid: e.target.value})}
+                  placeholder="Enter SID"
                 />
+              </div>
+              <div>
+                <Label htmlFor="nationalId">National ID</Label>
+                <Input 
+                  id="nationalId"
+                  value={enrollmentData.nationalId}
+                  onChange={(e) => setEnrollmentData({...enrollmentData, nationalId: e.target.value})}
+                  placeholder="Enter National ID"
+                />
+              </div>
+              <div>
+                <Label htmlFor="rank">Rank *</Label>
+                <Select value={enrollmentData.rank} onValueChange={(value) => setEnrollmentData({...enrollmentData, rank: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select rank" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="captain">Captain</SelectItem>
+                    <SelectItem value="chief-officer">Chief Officer</SelectItem>
+                    <SelectItem value="second-officer">Second Officer</SelectItem>
+                    <SelectItem value="third-officer">Third Officer</SelectItem>
+                    <SelectItem value="chief-engineer">Chief Engineer</SelectItem>
+                    <SelectItem value="first-engineer">First Engineer</SelectItem>
+                    <SelectItem value="second-engineer">Second Engineer</SelectItem>
+                    <SelectItem value="third-engineer">Third Engineer</SelectItem>
+                    <SelectItem value="able-seaman">Able Seaman</SelectItem>
+                    <SelectItem value="ordinary-seaman">Ordinary Seaman</SelectItem>
+                    <SelectItem value="bosun">Bosun</SelectItem>
+                    <SelectItem value="cook">Cook</SelectItem>
+                    <SelectItem value="steward">Steward</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="phoneNumber">Phone Number</Label>
@@ -198,9 +232,9 @@ export const Enrollment = () => {
               <Button 
                 onClick={() => handleStepChange("biometrics")}
                 className="bg-gradient-primary"
-                disabled={!enrollmentData.firstName || !enrollmentData.lastName || !enrollmentData.dateOfBirth}
+                disabled={!enrollmentData.firstName || !enrollmentData.lastName || !enrollmentData.dateOfBirth || !enrollmentData.sid || !enrollmentData.rank}
               >
-                Continue to Biometrics
+                Continue to Biometric Data
               </Button>
             </div>
           </CardContent>
@@ -210,54 +244,76 @@ export const Enrollment = () => {
       {/* Biometrics Step */}
       {currentStep === "biometrics" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Fingerprint Capture */}
-            <Card className="bg-gradient-card shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Fingerprint className="w-5 h-5" />
-                    Fingerprint
+          <h2 className="text-2xl font-bold text-foreground">Biometric Data Capture</h2>
+          
+          {/* 10 Finger Prints Section */}
+          <Card className="bg-gradient-card shadow-soft">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Fingerprint className="w-5 h-5" />
+                Fingerprint Capture (10 Fingers)
+                {capturedBiometrics.includes("fingerprint") && (
+                  <Badge className="bg-success text-success-foreground">
+                    <Check className="w-3 h-3 mr-1" />
+                    All Captured
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-5 gap-4 mb-6">
+                {/* Left Hand */}
+                <div className="col-span-5 mb-4">
+                  <h4 className="font-medium mb-2">Left Hand</h4>
+                  <div className="grid grid-cols-5 gap-2">
+                    {["Thumb", "Index", "Middle", "Ring", "Little"].map((finger, index) => (
+                      <div key={`left-${finger}`} className="text-center">
+                        <div className="w-16 h-20 bg-muted rounded-lg flex items-center justify-center mb-2">
+                          <Fingerprint className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-xs">{finger}</p>
+                        <div className="w-2 h-2 bg-success rounded-full mx-auto mt-1"></div>
+                      </div>
+                    ))}
                   </div>
-                  {capturedBiometrics.includes("fingerprint") && (
-                    <Badge className="bg-success text-success-foreground">
-                      <Check className="w-3 h-3 mr-1" />
-                      Captured
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="aspect-square bg-muted rounded-lg flex items-center justify-center mb-4">
-                  {capturedBiometrics.includes("fingerprint") ? (
-                    <div className="text-center">
-                      <Check className="w-12 h-12 text-success mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">High Quality</p>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <Fingerprint className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Place finger on scanner</p>
-                    </div>
-                  )}
                 </div>
+                
+                {/* Right Hand */}
+                <div className="col-span-5">
+                  <h4 className="font-medium mb-2">Right Hand</h4>
+                  <div className="grid grid-cols-5 gap-2">
+                    {["Thumb", "Index", "Middle", "Ring", "Little"].map((finger, index) => (
+                      <div key={`right-${finger}`} className="text-center">
+                        <div className="w-16 h-20 bg-muted rounded-lg flex items-center justify-center mb-2">
+                          <Fingerprint className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-xs">{finger}</p>
+                        <div className="w-2 h-2 bg-success rounded-full mx-auto mt-1"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-4 justify-center">
                 <Button 
                   onClick={() => handleBiometricCapture("fingerprint")}
                   variant={capturedBiometrics.includes("fingerprint") ? "outline" : "default"}
-                  className="w-full"
                 >
-                  {capturedBiometrics.includes("fingerprint") ? "Recapture" : "Capture"}
+                  {capturedBiometrics.includes("fingerprint") ? "Recapture All" : "Start Capture"}
                 </Button>
-              </CardContent>
-            </Card>
+                <Button variant="outline">Clear All</Button>
+              </div>
+            </CardContent>
+          </Card>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Photo Capture */}
-            <Card className="bg-gradient-card shadow-soft">
+            <Card className="bg-gradient-card shadow-soft h-fit">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Camera className="w-5 h-5" />
-                    Facial Photo
+                    Photo ID
                   </div>
                   {capturedBiometrics.includes("photo") && (
                     <Badge className="bg-success text-success-foreground">
@@ -268,31 +324,36 @@ export const Enrollment = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="aspect-square bg-muted rounded-lg flex items-center justify-center mb-4">
+                <div className="aspect-[3/4] w-full bg-muted rounded-lg flex items-center justify-center mb-4">
                   {capturedBiometrics.includes("photo") ? (
                     <div className="text-center">
-                      <Check className="w-12 h-12 text-success mx-auto mb-2" />
+                      <Check className="w-16 h-16 text-success mx-auto mb-2" />
                       <p className="text-sm text-muted-foreground">Excellent Quality</p>
                     </div>
                   ) : (
                     <div className="text-center">
-                      <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Look at camera</p>
+                      <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Position face in frame</p>
                     </div>
                   )}
                 </div>
-                <Button 
-                  onClick={() => handleBiometricCapture("photo")}
-                  variant={capturedBiometrics.includes("photo") ? "outline" : "default"}
-                  className="w-full"
-                >
-                  {capturedBiometrics.includes("photo") ? "Retake" : "Take Photo"}
-                </Button>
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => handleBiometricCapture("photo")}
+                    variant={capturedBiometrics.includes("photo") ? "outline" : "default"}
+                    className="w-full"
+                  >
+                    {capturedBiometrics.includes("photo") ? "Retake Photo" : "Capture Photo"}
+                  </Button>
+                  <Button variant="outline" className="w-full">
+                    Import from File
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
             {/* Iris Capture */}
-            <Card className="bg-gradient-card shadow-soft">
+            <Card className="bg-gradient-card shadow-soft h-fit">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -312,14 +373,24 @@ export const Enrollment = () => {
                   {capturedBiometrics.includes("iris") ? (
                     <div className="text-center">
                       <Check className="w-12 h-12 text-success mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Good Quality</p>
+                      <p className="text-sm text-muted-foreground">Both Eyes Captured</p>
                     </div>
                   ) : (
                     <div className="text-center">
                       <Eye className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Look into scanner</p>
+                      <p className="text-sm text-muted-foreground">Position eyes in scanner</p>
                     </div>
                   )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-success rounded-full mx-auto mb-1"></div>
+                    <p className="text-xs">Left Eye</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-success rounded-full mx-auto mb-1"></div>
+                    <p className="text-xs">Right Eye</p>
+                  </div>
                 </div>
                 <Button 
                   onClick={() => handleBiometricCapture("iris")}
@@ -360,28 +431,118 @@ export const Enrollment = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold mb-3">Demographics</h3>
-                <div className="space-y-2 text-sm">
-                  <p><span className="text-muted-foreground">Name:</span> {enrollmentData.firstName} {enrollmentData.lastName}</p>
-                  <p><span className="text-muted-foreground">Date of Birth:</span> {enrollmentData.dateOfBirth}</p>
-                  <p><span className="text-muted-foreground">Gender:</span> {enrollmentData.gender}</p>
-                  <p><span className="text-muted-foreground">Address:</span> {enrollmentData.address}</p>
+            {/* Preview Card and Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* ID Card Preview */}
+              <div className="lg:col-span-1">
+                <h3 className="font-semibold mb-3">ID Card Preview</h3>
+                <div 
+                  className="bg-gradient-primary p-4 rounded-xl shadow-strong text-primary-foreground"
+                  style={{ width: '256px', height: '162px' }} // 85.6mm x 54mm at 3x scale
+                >
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 h-full">
+                    {/* Header */}
+                    <div className="text-center mb-2">
+                      <h4 className="text-xs font-bold">SEAFARER IDENTITY DOCUMENT</h4>
+                      <p className="text-[8px] opacity-90">Maritime Authority</p>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex gap-2 text-[8px]">
+                      {/* Photo */}
+                      <div className="w-8 h-10 bg-white/20 rounded flex items-center justify-center">
+                        <User className="w-4 h-4 opacity-60" />
+                      </div>
+
+                      {/* Details */}
+                      <div className="flex-1 space-y-1">
+                        <div>
+                          <p className="opacity-75 text-[6px]">Name</p>
+                          <p className="font-semibold text-[7px]">{enrollmentData.firstName.toUpperCase()} {enrollmentData.lastName.toUpperCase()}</p>
+                        </div>
+                        <div>
+                          <p className="opacity-75 text-[6px]">SID</p>
+                          <p className="font-mono text-[7px]">{enrollmentData.sid || 'SID-XXXX'}</p>
+                        </div>
+                        <div>
+                          <p className="opacity-75 text-[6px]">Rank</p>
+                          <p className="text-[7px] capitalize">{enrollmentData.rank}</p>
+                        </div>
+                        <div>
+                          <p className="opacity-75 text-[6px]">DOB</p>
+                          <p className="text-[7px]">{enrollmentData.dateOfBirth}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-2 pt-1 border-t border-white/20 text-center">
+                      <p className="text-[6px] opacity-75">Valid until 2029</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <div>
-                <h3 className="font-semibold mb-3">Biometrics Captured</h3>
-                <div className="space-y-2">
-                  {capturedBiometrics.map((biometric) => (
-                    <div key={biometric} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-success" />
-                      <span className="text-sm capitalize">{biometric}</span>
-                      <Badge variant="outline" className="text-xs">High Quality</Badge>
-                    </div>
-                  ))}
+
+              {/* Summary Information */}
+              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-3">Bio Data</h3>
+                  <div className="space-y-2 text-sm">
+                    <p><span className="text-muted-foreground">Name:</span> {enrollmentData.firstName} {enrollmentData.lastName}</p>
+                    <p><span className="text-muted-foreground">SID:</span> {enrollmentData.sid}</p>
+                    <p><span className="text-muted-foreground">National ID:</span> {enrollmentData.nationalId}</p>
+                    <p><span className="text-muted-foreground">Date of Birth:</span> {enrollmentData.dateOfBirth}</p>
+                    <p><span className="text-muted-foreground">Gender:</span> {enrollmentData.gender}</p>
+                    <p><span className="text-muted-foreground">Rank:</span> {enrollmentData.rank}</p>
+                    <p><span className="text-muted-foreground">Address:</span> {enrollmentData.address}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold mb-3">Biometric Data Captured</h3>
+                  <div className="space-y-2">
+                    {capturedBiometrics.map((biometric) => (
+                      <div key={biometric} className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-success" />
+                        <span className="text-sm capitalize">{biometric === 'fingerprint' ? '10 Fingerprints' : biometric}</span>
+                        <Badge variant="outline" className="text-xs">High Quality</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Enrollment Data Grid */}
+            <div className="border-t border-border pt-6">
+              <h3 className="font-semibold mb-4">Recent Enrollments</h3>
+              <div className="rounded-lg border">
+                <div className="grid grid-cols-7 gap-4 p-4 bg-muted/50 font-medium text-sm">
+                  <div>SID</div>
+                  <div>Name</div>
+                  <div>Rank</div>
+                  <div>Date</div>
+                  <div>Status</div>
+                  <div>Biometrics</div>
+                  <div>Actions</div>
+                </div>
+                <div className="grid grid-cols-7 gap-4 p-4 border-t text-sm">
+                  <div className="font-mono">SID-2024-001</div>
+                  <div>John Smith</div>
+                  <div>Captain</div>
+                  <div>2024-01-20</div>
+                  <div><Badge className="bg-success text-success-foreground">Complete</Badge></div>
+                  <div><Badge variant="outline">3/3</Badge></div>
+                  <div><Button variant="outline" size="sm">View</Button></div>
+                </div>
+                <div className="grid grid-cols-7 gap-4 p-4 border-t text-sm">
+                  <div className="font-mono">SID-2024-002</div>
+                  <div>Jane Doe</div>
+                  <div>Chief Officer</div>
+                  <div>2024-01-19</div>
+                  <div><Badge variant="outline">Pending</Badge></div>
+                  <div><Badge variant="outline">2/3</Badge></div>
+                  <div><Button variant="outline" size="sm">View</Button></div>
                 </div>
               </div>
             </div>
