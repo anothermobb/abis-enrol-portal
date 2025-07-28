@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, UserPlus, FileText, AlertTriangle, TrendingUp, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ClockInOut } from "@/components/ClockInOut";
 
 const stats = [
   {
@@ -113,7 +114,14 @@ export const Dashboard = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Clock In/Out Widget */}
+        <div className="lg:col-span-1">
+          <ClockInOut />
+        </div>
+
+        {/* Recent Activity - takes remaining space */}
+        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Enrollments */}
         <Card className="bg-gradient-card shadow-soft border-border">
           <CardHeader>
@@ -199,6 +207,7 @@ export const Dashboard = () => {
             </Button>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );
