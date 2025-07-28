@@ -2,237 +2,305 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, TrendingUp, Download, Filter } from "lucide-react";
-import { ClockInOut } from "@/components/ClockInOut";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Clock, TrendingUp, Download, Filter, Search, Users, UserCheck, UserX } from "lucide-react";
+import { StaffAttendanceTable } from "@/components/StaffAttendanceTable";
+import { StaffClockManager } from "@/components/StaffClockManager";
 
-interface AttendanceRecord {
+interface StaffMember {
   id: string;
-  date: string;
-  timeIn: string;
+  name: string;
+  department: string;
+  position: string;
+  status: 'clocked-in' | 'clocked-out' | 'on-break';
+  timeIn?: string;
   timeOut?: string;
   totalHours?: number;
-  status: 'clocked-in' | 'clocked-out' | 'absent';
 }
 
 export const Attendance = () => {
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [selectedPeriod, setSelectedPeriod] = useState('week');
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load attendance records from localStorage
-    const records: AttendanceRecord[] = [];
-    const today = new Date();
-    
-    // Generate sample data for the last 30 days
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateString = date.toDateString();
-      
-      // Check if there's a real record
-      const savedRecord = localStorage.getItem(`clock-${dateString}`);
-      if (savedRecord) {
-        records.push(JSON.parse(savedRecord));
-      } else if (i < 20) { // Generate sample data for past days
-        // Skip weekends for sample data
-        if (date.getDay() !== 0 && date.getDay() !== 6) {
-          const timeIn = `0${8 + Math.floor(Math.random() * 2)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
-          const timeOut = `1${7 + Math.floor(Math.random() * 2)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
-          const start = new Date(`${dateString} ${timeIn}`);
-          const end = new Date(`${dateString} ${timeOut}`);
-          const totalHours = Math.round(((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * 100) / 100;
-          
-          records.push({
-            id: `record-${i}`,
-            date: dateString,
-            timeIn,
-            timeOut,
-            totalHours,
-            status: 'clocked-out'
-          });
-        }
+    // Generate sample staff data
+    const sampleStaff: StaffMember[] = [
+      {
+        id: "EMP-001",
+        name: "John Smith",
+        department: "Security",
+        position: "Security Officer",
+        status: "clocked-in",
+        timeIn: "08:00"
+      },
+      {
+        id: "EMP-002", 
+        name: "Sarah Johnson",
+        department: "Administration",
+        position: "Data Entry Clerk",
+        status: "clocked-in",
+        timeIn: "08:15"
+      },
+      {
+        id: "EMP-003",
+        name: "Michael Brown",
+        department: "IT Support",
+        position: "System Administrator", 
+        status: "on-break",
+        timeIn: "07:45"
+      },
+      {
+        id: "EMP-004",
+        name: "Emma Davis",
+        department: "Quality Control",
+        position: "QC Specialist",
+        status: "clocked-out",
+        timeIn: "08:00",
+        timeOut: "17:00",
+        totalHours: 8.5
+      },
+      {
+        id: "EMP-005",
+        name: "James Wilson",
+        department: "Operations",
+        position: "Operations Manager",
+        status: "clocked-in",
+        timeIn: "07:30"
+      },
+      {
+        id: "EMP-006",
+        name: "Lisa Anderson",
+        department: "HR",
+        position: "HR Assistant",
+        status: "clocked-out",
+        timeIn: "09:00",
+        timeOut: "18:00", 
+        totalHours: 8.0
       }
-    }
+    ];
+
+    setStaffMembers(sampleStaff);
     
-    setAttendanceRecords(records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    // Check URL params for employee selection
+    const urlParams = new URLSearchParams(window.location.search);
+    const employeeId = urlParams.get('employee');
+    if (employeeId) {
+      setSelectedEmployee(employeeId);
+    }
   }, []);
 
+  const handleStaffStatusChange = (staffId: string, newStatus: StaffMember['status']) => {
+    setStaffMembers(prev => 
+      prev.map(staff => 
+        staff.id === staffId 
+          ? { ...staff, status: newStatus }
+          : staff
+      )
+    );
+  };
+
   const calculateStats = () => {
-    const totalDays = attendanceRecords.length;
-    const totalHours = attendanceRecords.reduce((sum, record) => sum + (record.totalHours || 0), 0);
-    const avgHours = totalDays > 0 ? (totalHours / totalDays).toFixed(1) : '0';
-    const presentDays = attendanceRecords.filter(r => r.status !== 'absent').length;
-    const attendanceRate = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(1) : '0';
+    const totalStaff = staffMembers.length;
+    const activeStaff = staffMembers.filter(s => s.status === 'clocked-in').length;
+    const onBreak = staffMembers.filter(s => s.status === 'on-break').length;
+    const offDuty = staffMembers.filter(s => s.status === 'clocked-out').length;
     
-    return { totalDays, totalHours: totalHours.toFixed(1), avgHours, attendanceRate };
+    return { totalStaff, activeStaff, onBreak, offDuty };
   };
 
   const stats = calculateStats();
 
-  const getFilteredRecords = () => {
-    const now = new Date();
-    let cutoffDate = new Date();
-    
-    switch (selectedPeriod) {
-      case 'week':
-        cutoffDate.setDate(now.getDate() - 7);
-        break;
-      case 'month':
-        cutoffDate.setMonth(now.getMonth() - 1);
-        break;
-      case 'quarter':
-        cutoffDate.setMonth(now.getMonth() - 3);
-        break;
-      default:
-        cutoffDate = new Date(0); // Show all
-    }
-    
-    return attendanceRecords.filter(record => new Date(record.date) >= cutoffDate);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+  const getFilteredStaff = () => {
+    return staffMembers.filter(staff => {
+      const matchesSearch = staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           staff.department.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDepartment = selectedDepartment === 'all' || staff.department === selectedDepartment;
+      
+      return matchesSearch && matchesDepartment;
     });
   };
 
-  const getStatusBadge = (record: AttendanceRecord) => {
-    if (record.status === 'clocked-in') {
-      return <Badge className="bg-warning text-warning-foreground">In Progress</Badge>;
-    } else if (record.status === 'clocked-out') {
-      return <Badge className="bg-success text-success-foreground">Complete</Badge>;
-    } else {
-      return <Badge variant="destructive">Absent</Badge>;
-    }
-  };
+  const departments = ['all', ...Array.from(new Set(staffMembers.map(s => s.department)))];
+  const selectedStaff = selectedEmployee ? staffMembers.find(s => s.id === selectedEmployee) : null;
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Attendance Tracking</h1>
+          <h1 className="text-3xl font-bold text-foreground">Staff Attendance Management</h1>
           <p className="text-muted-foreground mt-1">
-            Track your work hours and attendance history
+            Monitor and manage staff attendance across all departments
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
-            Export
+            Export Report
           </Button>
-        </div>
-      </div>
-
-      {/* Clock In/Out Widget and Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Clock In/Out */}
-        <div className="lg:col-span-1">
-          <ClockInOut />
-        </div>
-
-        {/* Stats Cards */}
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-gradient-card shadow-soft border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Hours</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.totalHours}h</p>
-                </div>
-                <Clock className="h-8 w-8 text-primary" />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Avg: {stats.avgHours}h per day
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-card shadow-soft border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Attendance Rate</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.attendanceRate}%</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-success" />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {stats.totalDays} total days tracked
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Attendance History */}
-      <Card className="bg-gradient-card shadow-soft border-border">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Attendance History
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <select 
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="bg-background border border-border rounded px-3 py-1 text-sm"
-              >
-                <option value="week">Last Week</option>
-                <option value="month">Last Month</option>
-                <option value="quarter">Last Quarter</option>
-                <option value="all">All Time</option>
-              </select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Time In</TableHead>
-                <TableHead>Time Out</TableHead>
-                <TableHead>Total Hours</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {getFilteredRecords().map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell className="font-medium">
-                    {formatDate(record.date)}
-                  </TableCell>
-                  <TableCell className="font-mono">
-                    {record.timeIn || '-'}
-                  </TableCell>
-                  <TableCell className="font-mono">
-                    {record.timeOut || (record.status === 'clocked-in' ? 'In Progress' : '-')}
-                  </TableCell>
-                  <TableCell>
-                    {record.totalHours ? `${record.totalHours}h` : (record.status === 'clocked-in' ? 'In Progress' : '-')}
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(record)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {getFilteredRecords().length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No attendance records found for the selected period.
-            </div>
+          {selectedEmployee && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSelectedEmployee(null)}
+            >
+              Back to Overview
+            </Button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Individual Employee View */}
+      {selectedStaff ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <StaffClockManager 
+              staff={selectedStaff} 
+              onStatusChange={handleStaffStatusChange}
+            />
+          </div>
+          <div className="lg:col-span-2">
+            <Card className="bg-gradient-card shadow-soft border-border">
+              <CardHeader>
+                <CardTitle>Attendance History - {selectedStaff.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  Historical attendance data would be displayed here.
+                  <br />
+                  Integration with backend needed for historical records.
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="bg-gradient-card shadow-soft border-border">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Staff</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.totalStaff}</p>
+                  </div>
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-card shadow-soft border-border">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Active Now</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.activeStaff}</p>
+                  </div>
+                  <UserCheck className="h-8 w-8 text-success" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-card shadow-soft border-border">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">On Break</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.onBreak}</p>
+                  </div>
+                  <Clock className="h-8 w-8 text-warning" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-card shadow-soft border-border">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Off Duty</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.offDuty}</p>
+                  </div>
+                  <UserX className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters and Search */}
+          <Card className="bg-gradient-card shadow-soft border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filters & Search
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Date</label>
+                  <Input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Department</label>
+                  <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map(dept => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept === 'all' ? 'All Departments' : dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-muted-foreground">Search Employee</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name or department..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {/* Staff Attendance Table */}
+          <Card className="bg-gradient-card shadow-soft border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Staff Attendance Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StaffAttendanceTable 
+                limit={undefined} 
+                showActions={true}
+              />
+              {getFilteredStaff().length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No staff members found matching the current filters.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 };

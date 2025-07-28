@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, FileText, AlertTriangle, TrendingUp, Calendar } from "lucide-react";
+import { Users, UserPlus, FileText, AlertTriangle, TrendingUp, Calendar, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ClockInOut } from "@/components/ClockInOut";
+import { StaffAttendanceTable } from "@/components/StaffAttendanceTable";
 
 const stats = [
   {
@@ -115,13 +115,32 @@ export const Dashboard = () => {
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Clock In/Out Widget */}
-        <div className="lg:col-span-1">
-          <ClockInOut />
+        {/* Staff Attendance Overview */}
+        <div className="lg:col-span-2">
+          <Card className="bg-gradient-card shadow-soft border-border">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Staff Attendance Today
+                </CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate("/attendance")}
+                >
+                  View All
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <StaffAttendanceTable limit={4} />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recent Activity - takes remaining space */}
-        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="lg:col-span-1 space-y-6">
         {/* Recent Enrollments */}
         <Card className="bg-gradient-card shadow-soft border-border">
           <CardHeader>
