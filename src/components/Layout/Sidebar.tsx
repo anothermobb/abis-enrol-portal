@@ -1,25 +1,36 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useRole } from "../RoleProvider";
 import { 
   UserPlus, 
   Users, 
   BarChart3, 
   FileText, 
   Settings,
-  Shield
+  Shield,
+  Home
 } from "lucide-react";
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: BarChart3 },
+const operatorNavigation = [
+  { name: "Dashboard", href: "/", icon: Home },
   { name: "New Enrollment", href: "/enroll", icon: UserPlus },
   { name: "Records", href: "/records", icon: Users },
   { name: "Print Cards", href: "/print", icon: FileText },
-  { name: "Admin Panel", href: "/admin", icon: Shield },
-  { name: "Settings", href: "/settings", icon: Settings },
+];
+
+const adminNavigation = [
+  { name: "Dashboard", href: "/", icon: Home },
+  { name: "Analytics", href: "/admin", icon: BarChart3 },
+  { name: "New Enrollment", href: "/enroll", icon: UserPlus },
+  { name: "Records", href: "/records", icon: Users },
+  { name: "Print Cards", href: "/print", icon: FileText },
+  { name: "System", href: "/settings", icon: Settings },
 ];
 
 export const Sidebar = () => {
   const location = useLocation();
+  const { role } = useRole();
+  const navigation = role === "admin" ? adminNavigation : operatorNavigation;
 
   return (
     <div className="flex h-screen w-64 flex-col bg-gradient-card border-r border-border shadow-medium">
@@ -30,7 +41,9 @@ export const Sidebar = () => {
         </div>
         <div>
           <h1 className="text-xl font-bold text-foreground">ABIS</h1>
-          <p className="text-sm text-muted-foreground">Biometric System</p>
+          <p className="text-sm text-muted-foreground">
+            {role === "admin" ? "Admin Portal" : "Operator Portal"}
+          </p>
         </div>
       </div>
 
