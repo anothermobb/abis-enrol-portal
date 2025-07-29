@@ -6,15 +6,13 @@ import {
   BarChart3, 
   FileText, 
   Settings,
-  Shield,
-  Clock
+  Shield
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "New Enrollment", href: "/enroll", icon: UserPlus },
   { name: "Records", href: "/records", icon: Users },
-  { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Print Cards", href: "/print", icon: FileText },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
