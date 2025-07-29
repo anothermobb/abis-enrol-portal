@@ -14,6 +14,7 @@ const navigation = [
   { name: "New Enrollment", href: "/enroll", icon: UserPlus },
   { name: "Records", href: "/records", icon: Users },
   { name: "Print Cards", href: "/print", icon: FileText },
+  { name: "Admin Panel", href: "/admin", icon: Shield },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
