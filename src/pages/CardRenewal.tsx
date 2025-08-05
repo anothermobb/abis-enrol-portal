@@ -1,495 +1,456 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar, CreditCard, AlertTriangle, Download, Printer, Check, Clock, X, ArrowUpDown, Search, Filter, RefreshCw } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useMemo } from 'react';
+import { Search, Calendar, RefreshCw, AlertTriangle, CheckCircle, Clock, FileText, Download } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { toast } from '@/hooks/use-toast';
 
-// Mock data for cards
-const cardData = [
+interface CardRenewalData {
+  id: string;
+  employeeId: string;
+  name: string;
+  department: string;
+  position: string;
+  avatar?: string;
+  currentCardExpiry: Date;
+  renewalStatus: 'expired' | 'expiring' | 'active' | 'renewed' | 'pending';
+  lastRenewalDate?: Date;
+  renewalHistory: Array<{
+    date: Date;
+    type: 'initial' | 'renewal';
+    expiryDate: Date;
+  }>;
+  accessLevel: string;
+}
+
+// Mock data for card renewals
+const mockCardData: CardRenewalData[] = [
   {
-    id: "CARD001",
-    employeeId: "EMP001",
-    employeeName: "John Smith",
-    department: "Security",
-    issueDate: "2023-01-15",
-    expiryDate: "2025-01-15",
-    status: "active",
-    cardType: "access",
-    location: "Main Gate",
-    daysUntilExpiry: 356,
-    renewalStatus: "not_due"
+    id: '1',
+    employeeId: 'EMP001',
+    name: 'Sarah Johnson',
+    department: 'Human Resources',
+    position: 'HR Manager',
+    avatar: '/api/placeholder/32/32',
+    currentCardExpiry: new Date('2024-01-15'),
+    renewalStatus: 'expired',
+    lastRenewalDate: new Date('2023-01-15'),
+    renewalHistory: [
+      { date: new Date('2023-01-15'), type: 'renewal', expiryDate: new Date('2024-01-15') },
+      { date: new Date('2022-01-15'), type: 'initial', expiryDate: new Date('2023-01-15') }
+    ],
+    accessLevel: 'Level 3'
   },
   {
-    id: "CARD002",
-    employeeId: "EMP002",
-    employeeName: "Sarah Johnson",
-    department: "Administration",
-    issueDate: "2022-06-20",
-    expiryDate: "2024-06-20",
-    status: "expires_soon",
-    cardType: "access",
-    location: "Office Building",
-    daysUntilExpiry: 142,
-    renewalStatus: "pending"
+    id: '2',
+    employeeId: 'EMP002',
+    name: 'Michael Chen',
+    department: 'IT Department',
+    position: 'Software Engineer',
+    currentCardExpiry: new Date('2024-12-30'),
+    renewalStatus: 'expiring',
+    lastRenewalDate: new Date('2023-12-30'),
+    renewalHistory: [
+      { date: new Date('2023-12-30'), type: 'renewal', expiryDate: new Date('2024-12-30') }
+    ],
+    accessLevel: 'Level 2'
   },
   {
-    id: "CARD003",
-    employeeId: "EMP003",
-    employeeName: "Michael Brown",
-    department: "Technical",
-    issueDate: "2021-12-10",
-    expiryDate: "2024-03-10",
-    status: "expired",
-    cardType: "full_access",
-    location: "Server Room",
-    daysUntilExpiry: -49,
-    renewalStatus: "overdue"
+    id: '3',
+    employeeId: 'EMP003',
+    name: 'Emily Rodriguez',
+    department: 'Marketing',
+    position: 'Marketing Coordinator',
+    currentCardExpiry: new Date('2025-06-15'),
+    renewalStatus: 'active',
+    lastRenewalDate: new Date('2024-06-15'),
+    renewalHistory: [
+      { date: new Date('2024-06-15'), type: 'renewal', expiryDate: new Date('2025-06-15') }
+    ],
+    accessLevel: 'Level 1'
   },
   {
-    id: "CARD004",
-    employeeId: "EMP004",
-    employeeName: "Emma Wilson",
-    department: "Security",
-    issueDate: "2023-03-05",
-    expiryDate: "2024-03-05",
-    status: "expires_soon",
-    cardType: "access",
-    location: "Building B",
-    daysUntilExpiry: 35,
-    renewalStatus: "approved"
-  },
-  {
-    id: "CARD005",
-    employeeId: "EMP005",
-    employeeName: "David Chen",
-    department: "Technical",
-    issueDate: "2022-09-12",
-    expiryDate: "2024-09-12",
-    status: "active",
-    cardType: "temporary",
-    location: "Lab A",
-    daysUntilExpiry: 226,
-    renewalStatus: "processing"
+    id: '4',
+    employeeId: 'EMP004',
+    name: 'David Kim',
+    department: 'Finance',
+    position: 'Senior Accountant',
+    currentCardExpiry: new Date('2024-11-20'),
+    renewalStatus: 'expiring',
+    renewalHistory: [],
+    accessLevel: 'Level 2'
   }
 ];
 
-const summaryStats = [
-  {
-    title: "Total Active Cards",
-    value: "156",
-    change: "+12",
-    icon: CreditCard,
-    trend: "up",
-    description: "this month"
-  },
-  {
-    title: "Expiring Soon",
-    value: "23",
-    change: "+5",
-    icon: AlertTriangle,
-    trend: "up",
-    description: "next 90 days"
-  },
-  {
-    title: "Renewal Pending",
-    value: "8",
-    change: "-3",
-    icon: Clock,
-    trend: "down",
-    description: "awaiting approval"
-  },
-  {
-    title: "Overdue Cards",
-    value: "4",
-    change: "+2",
-    icon: X,
-    trend: "up",
-    description: "expired cards"
-  }
-];
-
-export const CardRenewal = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedDepartment, setSelectedDepartment] = useState("all");
-  const [sortField, setSortField] = useState("expiryDate");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+const CardRenewal = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
-  const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
-  const [renewalPeriod, setRenewalPeriod] = useState("2");
-  const { toast } = useToast();
+  const [cardData, setCardData] = useState<CardRenewalData[]>(mockCardData);
 
-  const getStatusBadge = (status: string, daysUntilExpiry: number) => {
-    if (daysUntilExpiry < 0) {
-      return <Badge variant="destructive"><X className="h-3 w-3 mr-1" />Expired</Badge>;
-    } else if (daysUntilExpiry <= 90) {
-      return <Badge className="bg-warning text-warning-foreground"><AlertTriangle className="h-3 w-3 mr-1" />Expires Soon</Badge>;
-    } else {
-      return <Badge className="bg-success text-success-foreground"><Check className="h-3 w-3 mr-1" />Active</Badge>;
-    }
+  // Calculate renewal urgency
+  const getUrgencyLevel = (expiryDate: Date): 'expired' | 'critical' | 'warning' | 'normal' => {
+    const today = new Date();
+    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilExpiry < 0) return 'expired';
+    if (daysUntilExpiry <= 7) return 'critical';
+    if (daysUntilExpiry <= 30) return 'warning';
+    return 'normal';
   };
 
-  const getRenewalStatusBadge = (renewalStatus: string) => {
-    switch (renewalStatus) {
-      case "not_due":
-        return <Badge variant="secondary">Not Due</Badge>;
-      case "pending":
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-300">Pending</Badge>;
-      case "approved":
-        return <Badge className="bg-success text-success-foreground">Approved</Badge>;
-      case "processing":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">Processing</Badge>;
-      case "overdue":
-        return <Badge variant="destructive">Overdue</Badge>;
-      default:
-        return <Badge variant="secondary">{renewalStatus}</Badge>;
-    }
-  };
-
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const handleSelectCard = (cardId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCards([...selectedCards, cardId]);
-    } else {
-      setSelectedCards(selectedCards.filter(id => id !== cardId));
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedCards(filteredAndSortedData.map(card => card.id));
-    } else {
-      setSelectedCards([]);
-    }
-  };
-
-  const handleRenewCard = (cardId: string) => {
-    toast({
-      title: "Card Renewal Initiated",
-      description: `Renewal process started for card ${cardId}`,
+  // Filter and sort cards
+  const filteredCards = useMemo(() => {
+    let filtered = cardData.filter(card => {
+      const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          card.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          card.department.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || card.renewalStatus === statusFilter;
+      
+      return matchesSearch && matchesStatus;
     });
+
+    // Sort by urgency
+    return filtered.sort((a, b) => {
+      const urgencyOrder = { expired: 0, critical: 1, warning: 2, normal: 3 };
+      const aUrgency = getUrgencyLevel(a.currentCardExpiry);
+      const bUrgency = getUrgencyLevel(b.currentCardExpiry);
+      return urgencyOrder[aUrgency] - urgencyOrder[bUrgency];
+    });
+  }, [cardData, searchTerm, statusFilter]);
+
+  // Status badge styling
+  const getStatusBadge = (status: string, expiryDate: Date) => {
+    const urgency = getUrgencyLevel(expiryDate);
+    
+    switch (urgency) {
+      case 'expired':
+        return <Badge variant="destructive" className="flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" />
+          Expired
+        </Badge>;
+      case 'critical':
+        return <Badge variant="destructive" className="flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Expires Soon
+        </Badge>;
+      case 'warning':
+        return <Badge variant="secondary" className="flex items-center gap-1 bg-orange-100 text-orange-800">
+          <Clock className="h-3 w-3" />
+          Expiring
+        </Badge>;
+      default:
+        return <Badge variant="outline" className="flex items-center gap-1 text-green-700 border-green-200">
+          <CheckCircle className="h-3 w-3" />
+          Active
+        </Badge>;
+    }
   };
 
+  // Handle individual card renewal
+  const handleRenewalAction = (cardId: string, action: 'renew' | 'extend' | 'view-history') => {
+    const card = cardData.find(c => c.id === cardId);
+    if (!card) return;
+
+    switch (action) {
+      case 'renew':
+        setCardData(prev => prev.map(c => 
+          c.id === cardId 
+            ? {
+                ...c,
+                renewalStatus: 'renewed' as const,
+                lastRenewalDate: new Date(),
+                currentCardExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+                renewalHistory: [
+                  ...c.renewalHistory,
+                  {
+                    date: new Date(),
+                    type: 'renewal' as const,
+                    expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                  }
+                ]
+              }
+            : c
+        ));
+        toast({
+          title: "Card Renewed",
+          description: `${card.name}'s access card has been renewed for 1 year.`,
+        });
+        break;
+      
+      case 'extend':
+        setCardData(prev => prev.map(c => 
+          c.id === cardId 
+            ? {
+                ...c,
+                currentCardExpiry: new Date(c.currentCardExpiry.getTime() + 90 * 24 * 60 * 60 * 1000) // 90 days extension
+              }
+            : c
+        ));
+        toast({
+          title: "Card Extended",
+          description: `${card.name}'s card expiry extended by 90 days.`,
+        });
+        break;
+
+      case 'view-history':
+        toast({
+          title: "Renewal History",
+          description: `Viewing renewal history for ${card.name}`,
+        });
+        break;
+    }
+  };
+
+  // Handle bulk renewal
   const handleBulkRenewal = () => {
     if (selectedCards.length === 0) {
       toast({
         title: "No cards selected",
-        description: "Please select cards to renew",
+        description: "Please select cards to renew.",
         variant: "destructive"
       });
       return;
     }
-    
+
+    setCardData(prev => prev.map(card => 
+      selectedCards.includes(card.id)
+        ? {
+            ...card,
+            renewalStatus: 'renewed' as const,
+            lastRenewalDate: new Date(),
+            currentCardExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            renewalHistory: [
+              ...card.renewalHistory,
+              {
+                date: new Date(),
+                type: 'renewal' as const,
+                expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+              }
+            ]
+          }
+        : card
+    ));
+
     toast({
-      title: "Bulk Renewal Started",
-      description: `Processing renewal for ${selectedCards.length} cards`,
+      title: "Bulk Renewal Complete",
+      description: `${selectedCards.length} cards have been renewed.`,
     });
-    setRenewalDialogOpen(false);
+
     setSelectedCards([]);
   };
 
-  const handlePrintCard = (cardId: string) => {
-    toast({
-      title: "Print Job Initiated",
-      description: `Sending card ${cardId} to printer`,
-    });
+  // Toggle card selection
+  const toggleCardSelection = (cardId: string) => {
+    setSelectedCards(prev => 
+      prev.includes(cardId) 
+        ? prev.filter(id => id !== cardId)
+        : [...prev, cardId]
+    );
   };
 
-  const handleExportData = () => {
-    toast({
-      title: "Export Started",
-      description: "Downloading card renewal report...",
-    });
+  // Select all filtered cards
+  const toggleSelectAll = () => {
+    const allFilteredIds = filteredCards.map(card => card.id);
+    setSelectedCards(prev => 
+      prev.length === allFilteredIds.length ? [] : allFilteredIds
+    );
   };
-
-  // Filter and sort data
-  const filteredAndSortedData = cardData
-    .filter(card => {
-      if (selectedStatus !== "all") {
-        if (selectedStatus === "expired" && card.daysUntilExpiry >= 0) return false;
-        if (selectedStatus === "expires_soon" && (card.daysUntilExpiry > 90 || card.daysUntilExpiry < 0)) return false;
-        if (selectedStatus === "active" && card.daysUntilExpiry <= 90) return false;
-      }
-      if (selectedDepartment !== "all" && card.department !== selectedDepartment) return false;
-      if (searchTerm && !card.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !card.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !card.id.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      const aValue = a[sortField as keyof typeof a];
-      const bValue = b[sortField as keyof typeof b];
-      const direction = sortDirection === "asc" ? 1 : -1;
-      
-      if (sortField === "expiryDate" || sortField === "issueDate") {
-        return new Date(aValue as string).getTime() - new Date(bValue as string).getTime() * direction;
-      }
-      
-      return aValue < bValue ? -direction : aValue > bValue ? direction : 0;
-    });
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Card Renewal Management</h1>
-          <p className="text-muted-foreground mt-1">
-            Monitor and manage ID card renewals and expiry tracking
-          </p>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Card Renewal Management</h1>
+        <p className="text-muted-foreground">
+          Manage access card renewals and track expiration dates
+        </p>
+      </div>
+
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex flex-1 gap-4 items-center max-w-md">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search by name, ID, or department..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Filter status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+              <SelectItem value="expiring">Expiring</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="renewed">Renewed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
         <div className="flex gap-2">
-          <Dialog open={renewalDialogOpen} onOpenChange={setRenewalDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" disabled={selectedCards.length === 0}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Bulk Renewal ({selectedCards.length})
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Bulk Card Renewal</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="renewal-period">Renewal Period (Years)</Label>
-                  <Select value={renewalPeriod} onValueChange={setRenewalPeriod}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 Year</SelectItem>
-                      <SelectItem value="2">2 Years</SelectItem>
-                      <SelectItem value="3">3 Years</SelectItem>
-                      <SelectItem value="5">5 Years</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  This will renew {selectedCards.length} selected cards for {renewalPeriod} year(s).
-                </p>
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setRenewalDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleBulkRenewal}>
-                    Confirm Renewal
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Button onClick={handleExportData}>
-            <Download className="h-4 w-4 mr-2" />
+          <Button 
+            onClick={handleBulkRenewal}
+            disabled={selectedCards.length === 0}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Renew Selected ({selectedCards.length})
+          </Button>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
             Export Report
           </Button>
         </div>
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {summaryStats.map((stat) => (
-          <Card key={stat.title} className="bg-gradient-card shadow-soft border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-              <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                <span className={stat.trend === 'up' ? 'text-destructive' : 'text-success'}>
-                  {stat.change}
-                </span>
-                <span>{stat.description}</span>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Expired</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {filteredCards.filter(c => getUrgencyLevel(c.currentCardExpiry) === 'expired').length}
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-orange-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Expiring Soon</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {filteredCards.filter(c => ['critical', 'warning'].includes(getUrgencyLevel(c.currentCardExpiry))).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {filteredCards.filter(c => getUrgencyLevel(c.currentCardExpiry) === 'normal').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Cards</p>
+                <p className="text-2xl font-bold">{filteredCards.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Main Card Table */}
-      <Card className="bg-gradient-card shadow-soft border-border">
+      {/* Cards List */}
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            ID Card Management
-          </CardTitle>
-          
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="flex flex-col space-y-1">
-              <Label htmlFor="search-input" className="text-sm">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="search-input"
-                  placeholder="Name, ID, or Card..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-            </div>
-            
-            <div className="flex flex-col space-y-1">
-              <Label htmlFor="status-select" className="text-sm">Status</Label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="expires_soon">Expires Soon</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex flex-col space-y-1">
-              <Label htmlFor="department-select" className="text-sm">Department</Label>
-              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Departments" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
-                  <SelectItem value="Security">Security</SelectItem>
-                  <SelectItem value="Administration">Administration</SelectItem>
-                  <SelectItem value="Technical">Technical</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex flex-col space-y-1">
-              <Label className="text-sm">Quick Actions</Label>
-              <Button variant="outline" size="sm" className="justify-start">
-                <Filter className="h-4 w-4 mr-2" />
-                Advanced Filters
-              </Button>
+          <div className="flex items-center justify-between">
+            <CardTitle>Access Cards</CardTitle>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={selectedCards.length === filteredCards.length && filteredCards.length > 0}
+                onCheckedChange={toggleSelectAll}
+              />
+              <span className="text-sm text-muted-foreground">Select All</span>
             </div>
           </div>
         </CardHeader>
-        
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedCards.length === filteredAndSortedData.length && filteredAndSortedData.length > 0}
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </TableHead>
-                  <TableHead>Card ID</TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort("employeeName")}>
-                    <div className="flex items-center gap-1">
-                      Employee
-                      <ArrowUpDown className="h-3 w-3" />
+          <div className="space-y-3">
+            {filteredCards.map((card) => (
+              <div 
+                key={card.id} 
+                className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <Checkbox
+                  checked={selectedCards.includes(card.id)}
+                  onCheckedChange={() => toggleCardSelection(card.id)}
+                />
+                
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={card.avatar} alt={card.name} />
+                  <AvatarFallback>{card.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                  <div>
+                    <h3 className="font-semibold">{card.name}</h3>
+                    <p className="text-sm text-muted-foreground">{card.employeeId}</p>
+                    <p className="text-sm text-muted-foreground">{card.department}</p>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        Expires: {card.currentCardExpiry.toLocaleDateString()}
+                      </span>
                     </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort("department")}>
-                    <div className="flex items-center gap-1">
-                      Department
-                      <ArrowUpDown className="h-3 w-3" />
+                    <div className="text-sm text-muted-foreground">
+                      Access Level: {card.accessLevel}
                     </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort("expiryDate")}>
-                    <div className="flex items-center gap-1">
-                      Expiry Date
-                      <ArrowUpDown className="h-3 w-3" />
-                    </div>
-                  </TableHead>
-                  <TableHead>Days Remaining</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Renewal Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAndSortedData.map((card) => (
-                  <TableRow key={card.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedCards.includes(card.id)}
-                        onCheckedChange={(checked) => handleSelectCard(card.id, checked as boolean)}
-                      />
-                    </TableCell>
-                    <TableCell className="font-mono text-sm font-medium">
-                      {card.id}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-semibold">{card.employeeName}</p>
-                        <p className="text-sm text-muted-foreground">{card.employeeId}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {card.department}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      {new Date(card.expiryDate).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className={`font-medium ${card.daysUntilExpiry < 0 ? 'text-destructive' : 
-                          card.daysUntilExpiry <= 90 ? 'text-warning' : 'text-success'}`}>
-                          {card.daysUntilExpiry < 0 ? `${Math.abs(card.daysUntilExpiry)} days ago` : 
-                           `${card.daysUntilExpiry} days`}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(card.status, card.daysUntilExpiry)}</TableCell>
-                    <TableCell>{getRenewalStatusBadge(card.renewalStatus)}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRenewCard(card.id)}
-                          disabled={card.renewalStatus === "processing"}
-                        >
-                          <RefreshCw className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handlePrintCard(card.id)}
-                          title="Print Card"
-                        >
-                          <Printer className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    {getStatusBadge(card.renewalStatus, card.currentCardExpiry)}
+                  </div>
+
+                  <div className="flex gap-2 justify-end">
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleRenewalAction(card.id, 'renew')}
+                      className="flex items-center gap-1"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Renew
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleRenewalAction(card.id, 'extend')}
+                    >
+                      Extend
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => handleRenewalAction(card.id, 'view-history')}
+                    >
+                      <FileText className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-          
-          {filteredAndSortedData.length === 0 && (
+
+          {filteredCards.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              No cards found for the selected filters.
+              No cards found matching your criteria.
             </div>
           )}
         </CardContent>
@@ -497,3 +458,5 @@ export const CardRenewal = () => {
     </div>
   );
 };
+
+export default CardRenewal;

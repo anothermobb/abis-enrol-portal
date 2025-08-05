@@ -9,15 +9,15 @@ import {
   Settings,
   Shield,
   Home,
-  CreditCard
+  RefreshCw
 } from "lucide-react";
 
 const operatorNavigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "New Enrollment", href: "/enroll", icon: UserPlus },
   { name: "Records", href: "/records", icon: Users },
-  { name: "Card Renewal", href: "/card-renewal", icon: CreditCard },
   { name: "Print Cards", href: "/print", icon: FileText },
+  { name: "Card Renewal", href: "/card-renewal", icon: RefreshCw },
 ];
 
 const adminNavigation = [
@@ -25,8 +25,8 @@ const adminNavigation = [
   { name: "Analytics", href: "/admin", icon: BarChart3 },
   { name: "New Enrollment", href: "/enroll", icon: UserPlus },
   { name: "Records", href: "/records", icon: Users },
-  { name: "Card Renewal", href: "/card-renewal", icon: CreditCard },
   { name: "Print Cards", href: "/print", icon: FileText },
+  { name: "Card Renewal", href: "/card-renewal", icon: RefreshCw },
   { name: "System", href: "/settings", icon: Settings },
 ];
 
