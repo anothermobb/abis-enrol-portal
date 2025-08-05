@@ -8,13 +8,15 @@ import {
   FileText, 
   Settings,
   Shield,
-  Home
+  Home,
+  CreditCard
 } from "lucide-react";
 
 const operatorNavigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "New Enrollment", href: "/enroll", icon: UserPlus },
   { name: "Records", href: "/records", icon: Users },
+  { name: "Card Renewal", href: "/card-renewal", icon: CreditCard },
   { name: "Print Cards", href: "/print", icon: FileText },
 ];
 
@@ -23,6 +25,7 @@ const adminNavigation = [
   { name: "Analytics", href: "/admin", icon: BarChart3 },
   { name: "New Enrollment", href: "/enroll", icon: UserPlus },
   { name: "Records", href: "/records", icon: Users },
+  { name: "Card Renewal", href: "/card-renewal", icon: CreditCard },
   { name: "Print Cards", href: "/print", icon: FileText },
   { name: "System", href: "/settings", icon: Settings },
 ];
