@@ -8,8 +8,7 @@ import {
   FileText, 
   Settings,
   Shield,
-  Home,
-  RefreshCw
+  Home
 } from "lucide-react";
 
 const operatorNavigation = [
@@ -17,7 +16,6 @@ const operatorNavigation = [
   { name: "New Enrollment", href: "/enroll", icon: UserPlus },
   { name: "Records", href: "/records", icon: Users },
   { name: "Print Cards", href: "/print", icon: FileText },
-  { name: "Card Renewal", href: "/card-renewal", icon: RefreshCw },
 ];
 
 const adminNavigation = [
@@ -26,7 +24,6 @@ const adminNavigation = [
   { name: "New Enrollment", href: "/enroll", icon: UserPlus },
   { name: "Records", href: "/records", icon: Users },
   { name: "Print Cards", href: "/print", icon: FileText },
-  { name: "Card Renewal", href: "/card-renewal", icon: RefreshCw },
   { name: "System", href: "/settings", icon: Settings },
 ];
 

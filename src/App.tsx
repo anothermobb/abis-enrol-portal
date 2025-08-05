@@ -10,7 +10,6 @@ import { Enrollment } from "./pages/Enrollment";
 import { Records } from "./pages/Records";
 import { RecordView } from "./pages/RecordView";
 import { PrintCards } from "./pages/PrintCards";
-import CardRenewal from "./pages/CardRenewal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,7 +32,6 @@ const App = () => (
               <Route path="/records" element={<Records />} />
               <Route path="/records/:id" element={<RecordView />} />
               <Route path="/print" element={<PrintCards />} />
-              <Route path="/card-renewal" element={<CardRenewal />} />
               <Route path="/admin" element={<RoleDashboard />} />
               <Route path="/logs" element={<NotFound />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
