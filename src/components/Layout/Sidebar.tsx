@@ -27,6 +27,7 @@ const adminNavigation = [
   { name: "Records", href: "/records", icon: Users },
   { name: "Print Cards", href: "/print", icon: FileText },
   { name: "Card Renewal", href: "/card-renewal", icon: RefreshCw },
+  { name: "Schedule Setup", href: "/schedule-setup", icon: Settings },
   { name: "System", href: "/settings", icon: Settings },
 ];
 
